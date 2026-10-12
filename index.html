@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>도시 복습 게임</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumBarunGothic@1.0/nanumbarungothicsubset.css">
+<style>
+:root{
+  --bg:#ffffff; --ink:#1f2933; --sub:#5f6b7a; --card:#f5f6f8; --line:#d9dde3;
+  --blue:#2f6fd6; --blue-l:#e8f0fd; --green:#2e9a5a; --green-l:#e6f5ec;
+  --orange:#e07a1f; --orange-l:#fdf0e3; --red:#d64545; --red-l:#fbe9e9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'NanumBarunGothic','Nanum Gothic','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 28px;border-bottom:1px solid var(--line)}
+header h1{font-size:24px;margin:0}
+.score{font-size:22px;font-weight:700}
+.score b{color:var(--orange)}
+main{flex:1;display:flex;justify-content:center;padding:28px 16px}
+.wrap{width:100%;max-width:980px}
+.tag{display:inline-block;padding:4px 14px;border-radius:999px;font-size:17px;font-weight:700}
+.t-blue{background:var(--blue-l);color:var(--blue)}
+.t-green{background:var(--green-l);color:var(--green)}
+.t-orange{background:var(--orange-l);color:var(--orange)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px}
+h2{font-size:32px;margin:14px 0 8px}
+p.lead{font-size:20px;color:var(--sub);margin:0 0 22px;line-height:1.6}
+.rounds{display:grid;gap:12px;margin:22px 0}
+.rounds .r{display:flex;align-items:center;gap:14px;font-size:20px;background:#fff;
+  border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.num{flex:none;width:36px;height:36px;border-radius:50%;color:#fff;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-size:18px}
+.n-blue{background:var(--blue)} .n-green{background:var(--green)} .n-orange{background:var(--orange)}
+button{font-family:inherit;cursor:pointer}
+.btn{font-size:21px;font-weight:700;padding:14px 30px;border-radius:12px;border:none;
+  background:var(--ink);color:#fff}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.progress{display:flex;gap:6px;margin:6px 0 18px}
+.progress span{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.progress span.ok{background:var(--green)} .progress span.no{background:var(--red)}
+.progress span.now{background:var(--ink)}
+.q{font-size:28px;font-weight:700;line-height:1.5;margin:6px 0 24px;min-height:84px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.opt{font-size:22px;font-weight:700;padding:20px 12px;border-radius:12px;
+  border:2px solid var(--line);background:#fff;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.correct{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.opt.wrong{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.opt:disabled{cursor:default}
+.fb{margin-top:20px;font-size:20px;line-height:1.6;padding:16px 20px;border-radius:12px;
+  background:#fff;border:1px solid var(--line);display:none}
+.fb.show{display:block}
+.fb strong{font-size:22px}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:12px}
+.hint{font-size:17px;color:var(--sub)}
+/* chain */
+.slots{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:80px;margin-bottom:22px}
+.slot{min-width:150px;padding:14px 16px;border-radius:12px;border:2px dashed var(--line);
+  font-size:19px;font-weight:700;text-align:center;color:var(--sub);background:#fff}
+.slot.filled{border-style:solid;border-color:var(--green);color:var(--ink);background:var(--green-l)}
+.slot.bad{border-color:var(--red);background:var(--red-l)}
+.arrow{font-size:24px;color:var(--sub)}
+.pool{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-size:19px;font-weight:700;padding:14px 18px;border-radius:12px;border:2px solid var(--line);
+  background:#fff;color:var(--ink)}
+.chip:disabled{opacity:.25}
+.big{font-size:64px;font-weight:800;color:var(--orange);margin:10px 0}
+.summary{display:grid;gap:10px;margin:18px 0}
+.summary div{display:flex;justify-content:space-between;font-size:20px;background:#fff;
+  border:1px solid var(--line);border-radius:10px;padding:12px 18px}
+@media (max-width:600px){
+  header{padding:12px 16px} header h1{font-size:19px}
+  .q{font-size:22px} h2{font-size:26px} .card{padding:18px}
+  .opt{font-size:19px;padding:16px 10px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏙️ 도시 복습 게임 · 8-2 / 8-3</h1>
+  <div class="score">점수 <b id="score">0</b></div>
+</header>
+<main><div class="wrap" id="app"></div></main>
+
+<script>
+/* ===== 문제 은행 (금성 사회2 교과서 144~151쪽 기반) ===== */
+const ROUNDS = [
+ { id:1, type:"choice", color:"blue", title:"어디일까?", sub:"도시 내부 구조 (8-2)",
+   intro:"설명을 읽고 도시의 어느 지역인지 고르세요.",
+   options:["도심","부도심","주변 지역","개발 제한 구역"],
+   items:[
+    {q:"접근성이 가장 높아 땅값(지가)이 가장 비싼 곳", a:"도심",
+     e:"도시의 중심이라 어디서든 오기 쉬움 → 땅값이 가장 높아요."},
+    {q:"높은 빌딩이 빽빽하고, 관공서·대기업 본사·백화점이 모여 있는 곳", a:"도심",
+     e:"비싼 땅값을 감당할 수 있는 상업·업무 기능이 모여요. (예: 서울 종로)"},
+    {q:"낮에는 사람으로 붐비지만 밤에는 텅 비는 '인구 공동화'가 나타나는 곳", a:"도심",
+     e:"주거 기능이 빠져나가 낮과 밤의 인구 차이가 커져요."},
+    {q:"도심과 떨어진 교통 요지에 자리 잡고, 도심의 기능 일부를 나누어 맡는 곳", a:"부도심",
+     e:"교통이 편리한 곳에 생겨 도심의 혼잡을 덜어 줘요. (예: 서울 여의도)"},
+    {q:"땅값 그래프에서 도심과 주변 지역 사이에 땅값이 살짝 다시 솟는 곳", a:"부도심",
+     e:"교통이 모이는 곳이라 주변보다 접근성이 높아 땅값이 다시 올라가요."},
+    {q:"대규모 아파트 단지가 많고 주거 기능이 중심인 곳", a:"주변 지역",
+     e:"땅값이 비교적 싸서 넓은 땅이 필요한 주거 기능이 자리 잡아요. (예: 서울 상계동)"},
+    {q:"넓은 땅이 필요한 학교를 새로 짓기에 알맞은 곳", a:"주변 지역",
+     e:"넓은 부지가 필요한 시설은 땅값이 싼 곳이 유리해요."},
+    {q:"도시가 무분별하게 넓어지는 것을 막고 녹지를 보전하려고 지정한 곳", a:"개발 제한 구역",
+     e:"'그린벨트'라고도 해요. 교과서에는 서울 내곡동 사진이 나와요 — 바로 우리 동네!"}
+   ]},
+ { id:2, type:"choice", color:"blue", title:"몇 단계일까?", sub:"도시화 과정 (8-3)",
+   intro:"S자 도시화 곡선의 어느 단계인지 고르세요.",
+   options:["초기 단계","가속화 단계","종착 단계"],
+   items:[
+    {q:"농업이 중심이고, 인구가 전 국토에 고르게 퍼져 있다", a:"초기 단계",
+     e:"도시화율이 낮고 도시 인구가 조금씩만 늘어나요."},
+    {q:"산업화로 촌락 인구가 도시로 대규모로 몰려든다 (이촌 향도)", a:"가속화 단계",
+     e:"공장·일자리가 도시에 생기면서 인구 이동이 급격해져요."},
+    {q:"도시화 곡선의 기울기가 가장 급한 구간", a:"가속화 단계",
+     e:"기울기가 급할수록 도시화가 빠르게 진행된다는 뜻이에요."},
+    {q:"도시화율이 높아진 뒤 증가 속도가 느려진다", a:"종착 단계",
+     e:"이미 대부분이 도시에 살아서 더 늘어날 여지가 적어요."},
+    {q:"도시 사람들이 주변 도시나 촌락으로 빠져나가는 역도시화가 나타나기도 한다", a:"종착 단계",
+     e:"도심 땅값 상승·환경 악화로 도시를 벗어나는 흐름이 생겨요."},
+    {q:"오늘날 대체로 선진국이 해당하는 단계", a:"종착 단계",
+     e:"선진국은 산업 혁명 이후 100년 넘게 도시화가 진행됐어요."},
+    {q:"오늘날 대체로 개발 도상국이 해당하는 단계", a:"가속화 단계",
+     e:"제2차 세계 대전 이후 빠르게 도시화가 진행되고 있어요."}
+   ]},
+ { id:3, type:"chain", color:"green", title:"원인→결과 잇기", sub:"8-2와 8-3을 하나로",
+   intro:"카드를 원인 → 결과 순서대로 눌러 사슬을 완성하세요.",
+   chains:[
+    {name:"도심에서는 무슨 일이?",
+     steps:["접근성이 높다","땅값이 비싸다","상업·업무 기능이 모인다","주거 기능이 빠져나간다","도심 인구 공동화"]},
+    {name:"도시 인구가 짧은 시간에 빠르게 늘면?",
+     steps:["빠른 산업화","이촌 향도","도시 인구 급증","주택·기반 시설 부족","불량 주거 지역 형성"]}
+   ]}
+];
+const PTS = 10, BONUS = 5;
+
+/* ===== 상태 ===== */
+let score = 0, rIdx = -1, qIdx = 0, order = [], results = {}, streak = 0;
+const app = document.getElementById("app");
+const $score = document.getElementById("score");
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const addScore = n => { score += n; $score.textContent = score; };
+
+/* ===== 화면 ===== */
+function home(){
+  score=0; addScore(0); results={}; streak=0;
+  app.innerHTML = `
+  <div class="card">
+    <span class="tag t-orange">가볍게 복습</span>
+    <h2>도시 단원 복습 게임</h2>
+    <p class="lead">교과서 8-2 도시 내부 구조와 8-3 도시화·도시 문제를 3개 라운드로 확인해요.<br>
+    맞히면 ${PTS}점, 연속으로 3번 맞히면 보너스 ${BONUS}점!</p>
+    <div class="rounds">
+      ${ROUNDS.map(r=>`<div class="r"><span class="num n-${r.color}">${r.id}</span>
+        <span><b>${r.title}</b> — ${r.sub}</span></div>`).join("")}
+    </div>
+    <div class="row"><span class="hint">모둠별로 미니 화이트보드에 답을 먼저 쓰고 함께 눌러도 좋아요.</span>
+      <button class="btn" onclick="startRound(0)">시작하기</button></div>
+  </div>`;
+}
+
+function startRound(i){
+  rIdx=i; qIdx=0; const r=ROUNDS[i];
+  order = r.type==="choice" ? shuffle(r.items) : r.chains;
+  results[r.id] = {ok:0,total:order.length, marks:[]};
+  app.innerHTML = `
+  <div class="card">
+    <span class="tag t-${r.color}">라운드 ${r.id}</span>
+    <h2>${r.title}</h2>
+    <p class="lead">${r.sub}<br>${r.intro}</p>
+    <div class="row"><span></span><button class="btn" onclick="nextQ()">라운드 시작</button></div>
+  </div>`;
+}
+
+function progressBar(){
+  const res=results[ROUNDS[rIdx].id];
+  return `<div class="progress">${order.map((_,k)=>{
+    const m=res.marks[k]; return `<span class="${m===true?'ok':m===false?'no':k===qIdx?'now':''}"></span>`;}).join("")}</div>`;
+}
+
+function nextQ(){
+  const r=ROUNDS[rIdx];
+  if(qIdx>=order.length){ return endRound(); }
+  if(r.type==="choice") showChoice(); else showChain();
+}
+
+function showChoice(){
+  const r=ROUNDS[rIdx], it=order[qIdx];
+  app.innerHTML = `
+  <div class="card">
+    <span class="tag t-${r.color}">라운드 ${r.id} · ${r.title}</span>
+    ${progressBar()}
+    <div class="q">${it.q}</div>
+    <div class="opts">${r.options.map(o=>`<button class="opt" data-o="${o}">${o}</button>`).join("")}</div>
+    <div class="fb" id="fb"></div>
+    <div class="row"><span class="hint">${qIdx+1} / ${order.length}</span>
+      <button class="btn" id="nx" disabled>다음 →</button></div>
+  </div>`;
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>answer(b,it));
+  document.getElementById("nx").onclick=()=>{qIdx++; nextQ();};
+}
+
+function answer(btn,it){
+  const ok = btn.dataset.o===it.a, res=results[ROUNDS[rIdx].id];
+  app.querySelectorAll(".opt").forEach(b=>{ b.disabled=true;
+    if(b.dataset.o===it.a) b.classList.add("correct"); });
+  let msg;
+  if(ok){ res.ok++; streak++; addScore(PTS);
+    msg = `<strong style="color:var(--green)">정답! +${PTS}</strong>`;
+    if(streak%3===0){ addScore(BONUS); msg += ` <strong style="color:var(--orange)">🔥 ${streak}연속 보너스 +${BONUS}</strong>`; }
+  } else { btn.classList.add("wrong"); streak=0;
+    msg = `<strong style="color:var(--red)">아쉬워요 — 정답은 '${it.a}'</strong>`; }
+  res.marks[qIdx]=ok;
+  const fb=document.getElementById("fb"); fb.innerHTML = msg+"<br>"+it.e; fb.classList.add("show");
+  document.getElementById("nx").disabled=false;
+}
+
+let chainState;
+function showChain(){
+  const r=ROUNDS[rIdx], ch=order[qIdx];
+  chainState={picked:[],miss:0};
+  app.innerHTML = `
+  <div class="card">
+    <span class="tag t-${r.color}">라운드 ${r.id} · ${r.title}</span>
+    ${progressBar()}
+    <div class="q">${ch.name}</div>
+    <div class="slots" id="slots">${ch.steps.map((_,k)=>
+      `${k?'<span class="arrow">→</span>':''}<div class="slot">${k+1}</div>`).join("")}</div>
+    <div class="pool" id="pool">${shuffle(ch.steps).map(s=>`<button class="chip">${s}</button>`).join("")}</div>
+    <div class="fb" id="fb"></div>
+    <div class="row"><span class="hint">틀린 카드를 누르면 다시 골라요. 한 번에 완성하면 만점!</span>
+      <button class="btn" id="nx" disabled>다음 →</button></div>
+  </div>`;
+  app.querySelectorAll(".chip").forEach(c=>c.onclick=()=>pickChip(c,ch));
+  document.getElementById("nx").onclick=()=>{qIdx++; nextQ();};
+}
+
+function pickChip(c,ch){
+  const k=chainState.picked.length, slots=app.querySelectorAll(".slot");
+  if(c.textContent===ch.steps[k]){
+    chainState.picked.push(c.textContent); c.disabled=true;
+    slots[k].textContent=c.textContent; slots[k].className="slot filled";
+    if(chainState.picked.length===ch.steps.length) finishChain();
+  } else {
+    chainState.miss++; slots[k].classList.add("bad");
+    setTimeout(()=>slots[k].classList.remove("bad"),450);
+  }
+}
+
+function finishChain(){
+  const res=results[ROUNDS[rIdx].id], m=chainState.miss;
+  const pts = m===0 ? 20 : m<=2 ? 10 : 5;
+  addScore(pts); if(m===0) res.ok++; res.marks[qIdx]= m===0;
+  const fb=document.getElementById("fb");
+  fb.innerHTML = (m===0?`<strong style="color:var(--green)">완벽해요! +${pts}</strong>`
+                       :`<strong style="color:var(--orange)">완성! (실수 ${m}번) +${pts}</strong>`)
+    + "<br>이 사슬을 한 문장으로 친구에게 말해 볼까요?";
+  fb.classList.add("show");
+  document.getElementById("nx").disabled=false;
+}
+
+function endRound(){
+  const r=ROUNDS[rIdx], res=results[r.id], last = rIdx===ROUNDS.length-1;
+  app.innerHTML = `
+  <div class="card">
+    <span class="tag t-${r.color}">라운드 ${r.id} 끝</span>
+    <h2>${r.title}</h2>
+    <p class="lead">${r.type==="chain"?"한 번에 완성한 사슬":"맞힌 문제"}: <b>${res.ok} / ${res.total}</b></p>
+    <div class="row"><span class="hint">현재 점수 ${score}점</span>
+      <button class="btn" onclick="${last?'final()':'startRound('+(rIdx+1)+')'}">${last?'결과 보기':'다음 라운드 →'}</button></div>
+  </div>`;
+}
+
+function final(){
+  app.innerHTML = `
+  <div class="card" style="text-align:center">
+    <span class="tag t-orange">최종 결과</span>
+    <div class="big">${score}점</div>
+    <div class="summary" style="text-align:left">
+      ${ROUNDS.map(r=>`<div><span><span class="num n-${r.color}" style="display:inline-flex;width:28px;height:28px;font-size:15px;margin-right:10px">${r.id}</span>${r.title}</span>
+        <b>${results[r.id].ok} / ${results[r.id].total}</b></div>`).join("")}
+    </div>
+    <p class="lead" style="margin-top:18px">가장 많이 틀린 라운드의 교과서 쪽수를 다시 펼쳐 보세요.<br>
+      8-2 → 144~147쪽 · 8-3 → 148~151쪽</p>
+    <button class="btn" onclick="home()">처음부터 다시</button>
+  </div>`;
+}
+
+home();
+</script>
+</body>
+</html>
